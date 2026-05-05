@@ -1,218 +1,86 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[codz]
-*$py.class
+import tkinter as tk
+from tkinter import messagebox, ttk
+import random
+import json
+import os
 
-# C extensions
-*.so
+# Базовый набор цитат
+DEFAULT_QUOTES = [
+    {"text": "Жизнь — это то, что с тобой происходит, пока ты строишь планы.", "author": "Джон Леннон", "category": "Жизнь"},
+    {"text": "Логика может привести вас от пункта А к пункту Б, а воображение — куда угодно.", "author": "Альберт Эйнштейн", "category": "Наука"},
+    {"text": "Успех — это идти от ошибки к ошибке, не теряя энтузиазма.", "author": "Уинстон Черчилль", "category": "Успех"}
+]
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+class QuoteApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Random Quote Generator")
+        self.root.geometry("600x500")
+        
+        self.history_file = "history.json"
+        self.quotes = DEFAULT_QUOTES
+        self.history = self.load_history()
 
-# PyInstaller
-#   Usually these files are written by a python script from a template
-#   before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+        self.setup_ui()
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+    def setup_ui(self):
+        # Секция вывода цитаты
+        self.quote_label = tk.Label(self.root, text="Нажмите кнопку, чтобы получить цитату", 
+                                   wraplength=500, font=("Arial", 12, "italic"), py=20)
+        self.quote_label.pack()
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py.cover
-.hypothesis/
-.pytest_cache/
-cover/
+        # Кнопки управления
+        btn_frame = tk.Frame(self.root)
+        btn_frame.pack(pady=10)
+        
+        tk.Button(btn_frame, text="Сгенерировать цитату", command=self.generate_quote).pack(side=tk.LEFT, padx=5)
+        
+        # Фильтрация
+        filter_frame = tk.LabelFrame(self.root, text="Фильтрация истории")
+        filter_frame.pack(fill="x", padx=10, pady=5)
+        
+        tk.Label(filter_frame, text="Автор/Тема:").pack(side=tk.LEFT, padx=5)
+        self.filter_entry = tk.Entry(filter_frame)
+        self.filter_entry.pack(side=tk.LEFT, fill="x", expand=True, padx=5)
+        tk.Button(filter_frame, text="Применить", command=self.update_history_display).pack(side=tk.LEFT, padx=5)
 
-# Translations
-*.mo
-*.pot
+        # История (Список)
+        self.history_list = tk.Listbox(self.root, width=70)
+        self.history_list.pack(pady=10, padx=10, fill="both", expand=True)
+        
+        self.update_history_display()
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+    def generate_quote(self):
+        quote = random.choice(self.quotes)
+        self.quote_label.config(text=f"«{quote['text']}»\n— {quote['author']}")
+        
+        # Добавление в историю
+        self.history.append(quote)
+        self.save_history()
+        self.update_history_display()
 
-# Flask stuff:
-instance/
-.webassets-cache
+    def update_history_display(self):
+        self.history_list.delete(0, tk.END)
+        search_query = self.filter_entry.get().lower()
+        
+        for q in reversed(self.history):
+            if search_query in q['author'].lower() or search_query in q['category'].lower():
+                self.history_list.insert(tk.END, f"[{q['category']}] {q['author']}: {q['text']}")
 
-# Scrapy stuff:
-.scrapy
+    def save_history(self):
+        with open(self.history_file, 'w', encoding='utf-8') as f:
+            json.dump(self.history, f, ensure_ascii=False, indent=4)
 
-# Sphinx documentation
-docs/_build/
+    def load_history(self):
+        if os.path.exists(self.history_file):
+            try:
+                with open(self.history_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except: return []
+        return []
 
-# PyBuilder
-.pybuilder/
-target/
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = QuoteApp(root)
+    root.mainloop()
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-# Pipfile.lock
-
-# UV
-#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-# uv.lock
-
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-# poetry.lock
-# poetry.toml
-
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#   pdm recommends including project-wide configuration in pdm.toml, but excluding .pdm-python.
-#   https://pdm-project.org/en/latest/usage/project/#working-with-version-control
-# pdm.lock
-# pdm.toml
-.pdm-python
-.pdm-build/
-
-# pixi
-#   Similar to Pipfile.lock, it is generally recommended to include pixi.lock in version control.
-# pixi.lock
-#   Pixi creates a virtual environment in the .pixi directory, just like venv module creates one
-#   in the .venv directory. It is recommended not to include this directory in version control.
-.pixi
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# Redis
-*.rdb
-*.aof
-*.pid
-
-# RabbitMQ
-mnesia/
-rabbitmq/
-rabbitmq-data/
-
-# ActiveMQ
-activemq-data/
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.envrc
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# PyCharm
-#   JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#   be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#   and can be added to the global gitignore or merged into this file.  For a more nuclear
-#   option (not recommended) you can uncomment the following to ignore the entire idea folder.
-# .idea/
-
-# Abstra
-#   Abstra is an AI-powered process automation framework.
-#   Ignore directories containing user credentials, local state, and settings.
-#   Learn more at https://abstra.io/docs
-.abstra/
-
-# Visual Studio Code
-#   Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
-#   that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#   and can be added to the global gitignore or merged into this file. However, if you prefer, 
-#   you could uncomment the following to ignore the entire vscode folder
-# .vscode/
-# Temporary file for partial code execution
-tempCodeRunnerFile.py
-
-# Ruff stuff:
-.ruff_cache/
-
-# PyPI configuration file
-.pypirc
-
-# Marimo
-marimo/_static/
-marimo/_lsp/
-__marimo__/
-
-# Streamlit
-.streamlit/secrets.toml
